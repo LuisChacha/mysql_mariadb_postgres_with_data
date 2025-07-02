@@ -1,0 +1,111 @@
+version: "3.8"
+
+services:
+  # Servicio PostgreSQL
+  postgres_db:
+    image: postgres:13
+    container_name: postgres_db
+    environment:
+      # Usuario por defecto para PostgreSQL
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: dbinicial_postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/postgres_init.sql:/docker-entrypoint-initdb.d/postgres_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dbinicial_postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # Servicio MySQL
+  mysql_db:
+    image: mysql:8.0
+    container_name: mysql_db
+    environment:
+      # Usuario por defecto para MySQL
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: dbinicial_mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-scripts/mysql_init.sql:/docker-entrypoint-initdb.d/mysql_init.sql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p123456",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # Servicio MariaDB
+  mariadb_db:
+    image: mariadb:10.6
+    container_name: mariadb_db
+    environment:
+      # Usuario por defecto para MariaDB
+      MARIADB_ROOT_PASSWORD: 123456
+      MARIADB_DATABASE: dbinicial_mariadb
+    ports:
+      - "3307:3306" # Mapeamos a un puerto diferente para evitar conflictos con MySQL
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./init-scripts/mariadb_init.sql:/docker-entrypoint-initdb.d/mariadb_init.sql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p123456",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # Servicio Adminer para gestión de bases de datos
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+      mysql_db:
+        condition: service_healthy
+      mariadb_db:
+        condition: service_healthy
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+  mysql_data:
+  mariadb_data:
+
+networks:
+  app_network:
+    driver: bridge
