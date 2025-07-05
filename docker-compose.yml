@@ -1,15 +1,13 @@
-version: "3.8"
-
 services:
   # Servicio PostgreSQL
   postgres_db:
     image: postgres:13
-    container_name: postgres_db
+    container_name: postgres
     environment:
       # Usuario por defecto para PostgreSQL
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: dbinicial_postgres
+      POSTGRES_DB: db-postgres
     ports:
       - "5432:5432"
     volumes:
@@ -21,16 +19,16 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app_network
+      - dbs_mmp_network
 
   # Servicio MySQL
   mysql_db:
     image: mysql:8.0
-    container_name: mysql_db
+    container_name: mysql
     environment:
       # Usuario por defecto para MySQL
       MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: dbinicial_mysql
+      MYSQL_DATABASE: db-mysql
     ports:
       - "3306:3306"
     volumes:
@@ -52,16 +50,16 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app_network
+      - dbs_mmp_network
 
   # Servicio MariaDB
   mariadb_db:
     image: mariadb:10.6
-    container_name: mariadb_db
+    container_name: mariadb
     environment:
       # Usuario por defecto para MariaDB
       MARIADB_ROOT_PASSWORD: 123456
-      MARIADB_DATABASE: dbinicial_mariadb
+      MARIADB_DATABASE: db-mariadb
     ports:
       - "3307:3306" # Mapeamos a un puerto diferente para evitar conflictos con MySQL
     volumes:
@@ -83,14 +81,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app_network
+      - dbs_mmp_network
 
   # Servicio Adminer para gestión de bases de datos
   adminer:
     image: adminer:latest
     container_name: adminer
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -99,7 +97,7 @@ services:
       mariadb_db:
         condition: service_healthy
     networks:
-      - app_network
+      - dbs_mmp_network
 
 volumes:
   postgres_data:
@@ -107,5 +105,5 @@ volumes:
   mariadb_data:
 
 networks:
-  app_network:
+  dbs_mmp_network:
     driver: bridge
